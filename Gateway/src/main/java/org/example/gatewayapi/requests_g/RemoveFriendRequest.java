@@ -1,6 +1,6 @@
-package org.example.gatewayapi.requests;
+package org.example.gatewayapi.requests_g;
 
-public class AddFriendRequest {
+public class RemoveFriendRequest {
     private Long userId;
     private Long friendId;
 

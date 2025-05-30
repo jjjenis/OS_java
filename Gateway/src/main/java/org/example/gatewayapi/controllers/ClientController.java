@@ -1,6 +1,6 @@
 package org.example.gatewayapi.controllers;
 
-import org.example.gatewayapi.requests.*;
+import org.example.gatewayapi.requests_g.*;
 import org.example.gatewayapi.services.ClientService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

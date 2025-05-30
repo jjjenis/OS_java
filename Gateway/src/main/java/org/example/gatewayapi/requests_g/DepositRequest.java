@@ -1,6 +1,6 @@
-package org.example.gatewayapi.requests;
+package org.example.gatewayapi.requests_g;
 
-public class WithdrawRequest {
+public class DepositRequest {
     private Long accountId;
     private Double amount;
 
