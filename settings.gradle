@@ -1,0 +1,6 @@
+rootProject.name = 'lab3_test'
+include ':service'
+include ':presentation'
+include ':data'
+include 'Gateway'
+
