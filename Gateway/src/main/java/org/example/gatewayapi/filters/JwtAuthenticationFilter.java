@@ -1,30 +1,34 @@
 package org.example.gatewayapi.filters;
 
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.filter.OncePerRequestFilter;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.security.Key;
+import org.example.gatewayapi.util.JwtUtil;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
 import java.util.Collections;
 
+@Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+
+    private final JwtUtil jwtUtil;
+
+    public JwtAuthenticationFilter(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         String path = request.getServletPath();
-        if (path.equals("/auth/login") || path.equals("/auth/login/")) {
+        if (path.startsWith("/auth/login")) {
             chain.doFilter(request, response);
             return;
         }
@@ -32,22 +36,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
-            try {
-                Claims claims = Jwts.parser()
-                        .setSigningKey(secretKey)
+            if (jwtUtil.validateToken(token)) {
+                String login = jwtUtil.getUsername(token);
+                String role = Jwts.parserBuilder()
+                        .setSigningKey(jwtUtil.getKey())
+                        .build()
                         .parseClaimsJws(token)
-                        .getBody();
-                String login = claims.getSubject();
-                String role = claims.get("role", String.class);
-                if (login != null && role != null) {
-                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                            login, null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)));
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                }
-            } catch (Exception e) {
+                        .getBody()
+                        .get("role", String.class);
+
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                        login, null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role)));
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            } else {
                 SecurityContextHolder.clearContext();
             }
         }
+
         chain.doFilter(request, response);
     }
 }

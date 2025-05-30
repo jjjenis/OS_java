@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class AuthService {
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
@@ -22,14 +24,14 @@ public class AuthService {
 
     public UserCredentials authenticate(String login, String password) {
         logger.debug("Authenticating login: {}", login);
-        UserCredentials user = userCredentialsRepository.findByLogin(login);
-        if (user == null) {
+        Optional<UserCredentials> user = userCredentialsRepository.findByLogin(login);
+        if (user.isEmpty()) {
             logger.debug("No user found for login: {}", login);
             return null;
         }
-        logger.debug("Found user: {}, password match: {}", user.getLogin(), passwordEncoder.matches(password, user.getPassword()));
-        if (passwordEncoder.matches(password, user.getPassword())) {
-            return user;
+        logger.debug("Found user: {}, password match: {}", user.get().getLogin(), passwordEncoder.matches(password, user.get().getPassword()));
+        if (passwordEncoder.matches(password, user.get().getPassword())) {
+            return user.orElse(null);
         }
         return null;
     }
